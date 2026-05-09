@@ -1,10 +1,14 @@
 import os
+import asyncio
 from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = os.environ.get('TOKEN')
 app = Flask(__name__)
+
+# البوت
+application = Application.builder().token(TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -18,7 +22,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
     if query.data == 'prices':
         await query.edit_message_text(text="أسعارنا:\n\n- حساب Netflix: 5$\n- حساب Spotify: 3$\n- شحن شدات ببجي: 10$\n\nلطلب تواصل معنا 👇")
     elif query.data == 'contact':
@@ -26,25 +29,25 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'about':
         await query.edit_message_text(text="بوت متجر US Syria الرسمي\n\nلبيع الحسابات والشحن الآمن ✅")
 
-# اعداد البوت
-application = Application.builder().token(TOKEN).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
-@app.route('/', methods=['GET'])
+# Flask Routes
+@app.route('/')
 def home():
     return "US Syria Bot is Running!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 async def webhook():
-    await application.update_queue.put(Update.de_json(request.get_json(force=True), application.bot))
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    await application.process_update(update)
     return 'ok'
 
-@app.route('/set_webhook', methods=['GET'])
+@app.route('/setwebhook', methods=['GET'])
 async def set_webhook():
-    url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{TOKEN}"
+    url = f"https://ussyriabot.onrender.com/{TOKEN}"
     await application.bot.set_webhook(url)
-    return f"webhook setup to {url}"
+    return f"Webhook set to {url}"
 
 if __name__ == '__main__':
     print("Bot is running...")
