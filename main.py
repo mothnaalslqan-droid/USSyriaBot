@@ -1,5 +1,4 @@
 import os
-import threading
 from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
@@ -11,9 +10,6 @@ app = Flask(__name__)
 @app.route('/')
 def home():
     return "US Syria Bot is Running!"
-
-def run_flask():
-    app.run(host='0.0.0.0', port=10000)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -35,15 +31,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'about':
         await query.edit_message_text(text="بوت متجر US Syria الرسمي\n\nلبيع الحسابات والشحن الآمن ✅")
 
-def run_telegram():
+def main():
     print("Bot is running...")
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(button))
-    application.run_polling()
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
-    # 1. شغل Flask بخيط منفصل اول شي
-    threading.Thread(target=run_flask, daemon=True).start()
-    # 2. بعدين شغل بوت التليجرام
-    run_telegram()
+    main()
