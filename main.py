@@ -34,7 +34,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query.data == 'prices':
         await query.edit_message_text(text="أسعارنا:\n\n- حساب Netflix: 5$\n- حساب Spotify: 3$\n- شحن شدات ببجي: 10$\n\nلطلب تواصل معنا 👇")
     elif query.data == 'contact':
-        await query.edit_message_text(text="تواصل معنا:\n\nتليجرام: @YourUsername\nواتساب: +963xxx")
+        await query.edit_message_text(text="تواصل معنا:\n\nتليجرام: @mo3ad_74")
     elif query.data == 'about':
         await query.edit_message_text(text="بوت متجر US Syria الرسمي\n\nلبيع الحسابات والشحن الآمن ✅")
 
