@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 TOKEN = os.environ.get('TOKEN')
 app = Flask(__name__)
 
-# 1. جهز البوت
+# 1. انشاء البوت - بدون Updater
 application = Application.builder().token(TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -31,27 +31,23 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
-# 2. Flask Routes للـ Webhook
+# 2. Webhook للـ Flask
 @app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    application.update_queue.put_nowait(update)
+async def webhook():
+    await application.process_update(
+        Update.de_json(request.get_json(force=True), application.bot)
+    )
     return 'ok'
 
 @app.route('/')
 def index():
     return 'Bot is running...'
 
-# 3. شغل البوت مع السيرفر - هاد السطر حل المشكلة
-if __name__ == '__main__':
-    import asyncio
-    async def run():
-        await application.initialize()
-        await application.start()
-        await application.updater.start_webhook(
-            listen="0.0.0.0",
-            port=int(os.environ.get('PORT', 10000)),
-            url_path=TOKEN,
-            webhook_url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{TOKEN}"
-        )
-    asyncio.run(run())
+# 3. شغل البوت اول ما يشتغل السيرفر
+async def setup():
+    await application.initialize()
+    await application.bot.set_webhook(
+        url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{TOKEN}"
+    )
+
+application.job_queue.run_once(lambda _: setup(), 0)
