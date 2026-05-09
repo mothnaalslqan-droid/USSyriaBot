@@ -18,13 +18,17 @@ def start(message):
         app = Flask(__name__)
 
         @app.route('/')
-        def home():
-            return "USSyriaBot Running"
+import threading
 
-            def run():
-                app.run(host="0.0.0.0", port=10000)
+def run_bot():
+    print("Bot started...")
+        bot.infinity_polling()
 
-                threading.Thread(target=run).start()
+        def run_flask():
+            app.run(host="0.0.0.0", port=10000)
 
-                print("Bot started...")
-                bot.infinity_polling()
+            if __name__ == '__main__':
+                # 1. شغل Flask بخيط لحاله
+                    threading.Thread(target=run_flask).start()
+                        # 2. شغل البوت بالخيط الرئيسي
+                            run_bot()
