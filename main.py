@@ -21,7 +21,8 @@ def send_welcome(message):
             # === Flask server to keep Render alive ===
             import threading
             from flask import Flask
-
+print("Bot started...")
+bot.infinity_polling()
             app = Flask(__name__)
 
             @app.route('/')
