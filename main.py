@@ -4,10 +4,8 @@ from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# جلب التوكن من Environment بـ Render
 TOKEN = os.environ.get('TOKEN')
 
-# تشغيل Flask عشان Render ما يطفي
 app = Flask(__name__)
 
 @app.route('/')
@@ -17,7 +15,6 @@ def home():
 def run_flask():
     app.run(host='0.0.0.0', port=10000)
 
-# أوامر بوت التليجرام
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("اسعارنا 💲", callback_data='prices')],
@@ -38,7 +35,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'about':
         await query.edit_message_text(text="بوت متجر US Syria الرسمي\n\nلبيع الحسابات والشحن الآمن ✅")
 
-def main():
+def run_telegram():
     print("Bot is running...")
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
@@ -46,7 +43,7 @@ def main():
     application.run_polling()
 
 if __name__ == '__main__':
-    # شغل Flask بثريد منفصل
-    threading.Thread(target=run_flask).start()
-    # شغل بوت التليجرام
-    main()
+    # 1. شغل Flask بخيط منفصل اول شي
+    threading.Thread(target=run_flask, daemon=True).start()
+    # 2. بعدين شغل بوت التليجرام
+    run_telegram()
