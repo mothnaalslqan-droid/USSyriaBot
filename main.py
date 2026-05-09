@@ -1,13 +1,8 @@
 import os
-from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = os.environ.get('TOKEN')
-app = Flask(__name__)
-
-# 1. انشاء البوت - بدون Updater
-application = Application.builder().token(TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -28,26 +23,12 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'about':
         await query.edit_message_text(text="نحن متجر الكتروني موثوق")
 
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CallbackQueryHandler(button))
+def main():
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button))
+    print("Bot is running...")
+    app.run_polling()
 
-# 2. Webhook للـ Flask
-@app.route(f'/{TOKEN}', methods=['POST'])
-async def webhook():
-    await application.process_update(
-        Update.de_json(request.get_json(force=True), application.bot)
-    )
-    return 'ok'
-
-@app.route('/')
-def index():
-    return 'Bot is running...'
-
-# 3. شغل البوت اول ما يشتغل السيرفر
-async def setup():
-    await application.initialize()
-    await application.bot.set_webhook(
-        url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{TOKEN}"
-    )
-
-application.job_queue.run_once(lambda _: setup(), 0)
+if __name__ == '__main__':
+    main()
