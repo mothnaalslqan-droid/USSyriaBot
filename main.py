@@ -17,4 +17,21 @@ def echo_all(message):
     bot.reply_to(message, "استلمت: " + message.text)
 
 print("Bot is running...")
+
+# === كود الضحك على Render ===
+import threading
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "USSyriaBot شغال ✅"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
+
+threading.Thread(target=run_flask).start()
+# === خلصنا ضحك ===
+
 bot.infinity_polling()
