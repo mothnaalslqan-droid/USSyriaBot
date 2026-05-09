@@ -1,13 +1,13 @@
 import os
-import asyncio
 from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+import asyncio
 
 TOKEN = os.environ.get('TOKEN')
 app = Flask(__name__)
 
-# البوت
+# 1. اعداد البوت
 application = Application.builder().token(TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -32,23 +32,16 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
-# Flask Routes
+# 2. Flask Routes - بدون async
 @app.route('/')
 def home():
     return "US Syria Bot is Running!"
 
 @app.route(f'/{TOKEN}', methods=['POST'])
-async def webhook():
+def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    await application.process_update(update)
+    asyncio.run(application.process_update(update))
     return 'ok'
 
 @app.route('/setwebhook', methods=['GET'])
-async def set_webhook():
-    url = f"https://ussyriabot.onrender.com/{TOKEN}"
-    await application.bot.set_webhook(url)
-    return f"Webhook set to {url}"
-
-if __name__ == '__main__':
-    print("Bot is running...")
-    app.run(host='0.0.0.0', port=10000)
+def set_webhook
