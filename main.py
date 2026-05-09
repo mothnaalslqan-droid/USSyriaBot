@@ -1,68 +1,77 @@
 import os
 import logging
-from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from flask import Flask
 import threading
 
-TOKEN = os.environ.get('TOKEN')
-
-logging.basicConfig(level=logging.INFO)
 app = Flask(__name__)
-
 @app.route('/')
 def home():
-    return "البوت شغال تمام"
+    return "Bot Running"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=10000)
+
+logging.basicConfig(level=logging.INFO)
+TOKEN = os.environ.get('TOKEN')
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [InlineKeyboardButton("🔥 شحن شدات ببجي", callback_data='uc')],
-        [InlineKeyboardButton("💎 شحن جواهر فري فاير", callback_data='diamonds')],
-        [InlineKeyboardButton("👑 اشتراكات", callback_data='subs')],
-        [InlineKeyboardButton("📞 الدعم الفني", callback_data='support')]
+        [InlineKeyboardButton("اسعارنا 💲", callback_data='prices')],
+        [InlineKeyboardButton("تواصل معنا 📞", callback_data='contact')],
+        [InlineKeyboardButton("عن البوت 🤖", callback_data='about')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
-        "اهلا فيك بمتجر US Syria Store 🇺🇸🇸🇾\nاختر الخدمة:",
+        "أهلاً فيك بمتجر US Syria الرسمي 🔥\n\n"
+        "✅ شحن شدات ببجي موبايل بأرخص الأسعار\n"
+        "✅ زيادة متابعين إنستغرام حقيقيين\n"
+        "✅ زيادة مشاهدات ريلز وإعجابات\n"
+        "✅ الدفع الآمن عبر شام كاش\n\n"
+        "اختر من القائمة:",
         reply_markup=reply_markup
     )
 
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
-    if query.data == "uc":
-        text = """🔥 **شحن شدات ببجي** 🔥
+    if query.data == 'prices':
+        await query.edit_message_text(
+            "💲 *قائمة أسعارنا:*\n\n"
+            "🎮 *ببجي موبايل:*\n"
+            "• 60 شدة - 1$\n"
+            "• 325 شدة - 5$\n"
+            "• 660 شدة - 10$\n"
+            "• 1800 شدة - 25$\n\n"
+            "📱 *إنستغرام:*\n"
+            "• 1000 متابع - 3$\n"
+            "• 5000 متابع - 12$\n"
+            "• 10000 مشاهدة ريلز - 2$",
+            parse_mode='Markdown'
+        )
+    elif query.data == 'contact':
+        await query.edit_message_text(
+            "📞 *للتواصل والطلب:*\n\n"
+            "يوزر التليجرام: @mo3ad_74\n\n"
+            "💰 الدفع عبر شام كاش فقط",
+            parse_mode='Markdown'
+        )
+    elif query.data == 'about':
+        await query.edit_message_text(
+            "🤖 *عن متجر US Syria*\n\n"
+            "متجر سوري موثوق 100%\n"
+            "✅ أسعار منافسة\n"
+            "✅ ضمان على الخدمة",
+            parse_mode='Markdown'
+        )
 
-الأسعار:
-- 60 شدة = 1$
-- 325 شدة = 5$  
-- 660 شدة = 10$
-- 1800 شدة = 25$
-
-للطلب تواصل مع الدعم 👨‍💻
-@mo3ad_74
-"""
-        await query.edit_message_text(text=text, parse_mode='Markdown')
-    
-    elif query.data == "diamonds":
-        text = "💎 **شحن جواهر فري فاير** قريباً..."
-        await query.edit_message_text(text=text)
-    
-    elif query.data == "subs":
-        text = "👑 **الاشتراكات** قريباً..."
-        await query.edit_message_text(text=text)
-    
-    elif query.data == "support":
-        text = "📞 **للدعم الفني تواصل مع:**\n@mo3ad_74"
-        await query.edit_message_text(text=text)
-
-def run_bot():
-    application = ApplicationBuilder().token(TOKEN).build()
+def main():
+    threading.Thread(target=run_flask).start()
+    application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(button))
     application.run_polling()
 
 if __name__ == '__main__':
-    threading.Thread(target=lambda: app.run(host="0.0.0.0", port=int(os.environ.get('PORT', 10000)))).start()
-    run_bot()
+    main()
