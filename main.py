@@ -1,15 +1,10 @@
 import os
-from flask import Flask
+from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = os.environ.get('TOKEN')
-
 app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "US Syria Bot is Running!"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -31,12 +26,26 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'about':
         await query.edit_message_text(text="بوت متجر US Syria الرسمي\n\nلبيع الحسابات والشحن الآمن ✅")
 
-def main():
-    print("Bot is running...")
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CallbackQueryHandler(button))
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+# اعداد البوت
+application = Application.builder().token(TOKEN).build()
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CallbackQueryHandler(button))
+
+@app.route('/', methods=['GET'])
+def home():
+    return "US Syria Bot is Running!"
+
+@app.route(f'/{TOKEN}', methods=['POST'])
+async def webhook():
+    await application.update_queue.put(Update.de_json(request.get_json(force=True), application.bot))
+    return 'ok'
+
+@app.route('/set_webhook', methods=['GET'])
+async def set_webhook():
+    url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{TOKEN}"
+    await application.bot.set_webhook(url)
+    return f"webhook setup to {url}"
 
 if __name__ == '__main__':
-    main()
+    print("Bot is running...")
+    app.run(host='0.0.0.0', port=10000)
