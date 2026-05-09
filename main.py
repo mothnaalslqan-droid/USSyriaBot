@@ -1,34 +1,35 @@
-import telebot
 import os
+import threading
 from flask import Flask
-import threading
+import telebot
 
-TOKEN = os.environ.get("TOKEN")
-
+# --- الاعدادات ---
+TOKEN = os.environ['TOKEN']
 bot = telebot.TeleBot(TOKEN)
+app = Flask(__name__)
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, "Bot is running!")
+# --- صفحة الويب عشان Render ما يطفي ---
+@app.route('/')
+def home():
+    return "Bot is running"
 
-    @bot.message_handler(func=lambda message: True)
-    def echo_all(message):
-        bot.reply_to(message, message.text)
+    # --- اوامر البوت ---
+    @bot.message_handler(commands=['start'])
+    def send_welcome(message):
+        bot.reply_to(message, "أهلاً! البوت شغال ✅")
 
-        app = Flask(__name__)
+        @bot.message_handler(func=lambda message: True)
+        def echo_all(message):
+            bot.reply_to(message, message.text)
 
-        @app.route('/')
-import threading
+            # --- تشغيل البوت والسيرفر سوا ---
+            def run_bot():
+                print("Bot started...")
+                    bot.infinity_polling()
 
-def run_bot():
-    print("Bot started...")
-        bot.infinity_polling()
+                    def run_flask():
+                        app.run(host="0.0.0.0", port=10000)
 
-        def run_flask():
-            app.run(host="0.0.0.0", port=10000)
-
-            if __name__ == '__main__':
-                # 1. شغل Flask بخيط لحاله
-                    threading.Thread(target=run_flask).start()
-                        # 2. شغل البوت بالخيط الرئيسي
-                            run_bot()
+                        if __name__ == '__main__':
+                            threading.Thread(target=run_flask).start()
+                                run_bot()
