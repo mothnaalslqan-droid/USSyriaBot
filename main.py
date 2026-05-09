@@ -7,6 +7,7 @@ import asyncio
 TOKEN = os.environ.get('TOKEN')
 app = Flask(__name__)
 
+# 1. جهز البوت
 application = Application.builder().token(TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -31,6 +32,10 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
+# 2. تهيئة البوت قبل التشغيل - هاد السطر حل المشكلة
+asyncio.run(application.initialize())
+
+# 3. Flask Routes
 @app.route('/')
 def home():
     return "US Syria Bot is Running!"
@@ -42,7 +47,7 @@ def webhook():
     return 'ok'
 
 @app.route('/setwebhook', methods=['GET'])
-def set_webhook():  # هون كان الخطأ - نسيت الأقواس
+def set_webhook():
     url = f"https://ussyriabot.onrender.com/{TOKEN}"
     asyncio.run(application.bot.set_webhook(url))
     return f"Webhook set to {url}"
