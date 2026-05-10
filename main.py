@@ -13,6 +13,7 @@ app = Flask(__name__)
 # تجهيز البوت
 application = Application.builder().token(TOKEN).build()
 
+# دالة /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("اسعارنا 💵", callback_data='prices')],
@@ -22,6 +23,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text('أهلاً فيك بمُتجرنا!', reply_markup=reply_markup)
 
+# دالة الأزرار
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -32,18 +34,32 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'about':
         await query.edit_message_text(text="عن البوت: هذا بوت معلوماتي.")
 
+# إضافة الـ Handlers
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
 # تهيئة البوت قبل التشغيل
 asyncio.run(application.initialize())
 
-# Flask route
-@app.route('/', methods=['GET', 'POST'])
+# --------------------
+# Webhook Route
+# --------------------
+@app.route('/webhook', methods=['POST'])
+async def webhook():
+    update = Update.de_json(request.get_json(force=True), application.bot)
+    await application.update_queue.put(update)
+    return "OK"
+
+# --------------------
+# صفحة اختبار السيرفر
+# --------------------
+@app.route('/', methods=['GET'])
 def index():
     return "Bot is running!"
 
+# --------------------
 # تشغيل Flask
+# --------------------
 if __name__ == "__main__":
     print("Render!")
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
