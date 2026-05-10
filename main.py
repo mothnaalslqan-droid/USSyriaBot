@@ -4,16 +4,15 @@ from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# قراءة التوكن من متغير البيئة
+# قراءة التوكن من البيئة
 TOKEN = os.environ.get('TOKEN')
 
 # إنشاء تطبيق Flask
 app = Flask(__name__)
 
-# 1. تجهيز البوت
+# تجهيز البوت
 application = Application.builder().token(TOKEN).build()
 
-# دالة /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("اسعارنا 💵", callback_data='prices')],
@@ -23,7 +22,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text('أهلاً فيك بمُتجرنا!', reply_markup=reply_markup)
 
-# دالة التعامل مع الأزرار
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -34,12 +32,18 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == 'about':
         await query.edit_message_text(text="عن البوت: هذا بوت معلوماتي.")
 
-# إضافة الهاندلرز للبوت
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
-# 2. تهيئة البوت قبل التشغيل
+# تهيئة البوت قبل التشغيل
 asyncio.run(application.initialize())
 
-# 3. Flask Routes
-@app.route
+# Flask route
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    return "Bot is running!"
+
+# تشغيل Flask
+if __name__ == "__main__":
+    print("Render!")
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
