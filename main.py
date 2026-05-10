@@ -1,64 +1,44 @@
 import os
 import asyncio
 from flask import Flask, request
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram import Bot, Update
+from telegram.ext import Dispatcher, CommandHandler, MessageHandler, Filters
 
-# قراءة التوكن من متغير البيئة
-TOKEN = os.environ.get('TOKEN')
+# ====== إعدادات البوت ======
+TOKEN = "YOUR_BOT_TOKEN_HERE"  # استبدل هنا بالتوكن الفعلي من BotFather
+WEBHOOK_PATH = f"/{TOKEN}"
+WEBHOOK_URL = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}{WEBHOOK_PATH}"
 
-# تهيئة Flask
+bot = Bot(token=TOKEN)
 app = Flask(__name__)
 
-# تهيئة البوت
-application = Application.builder().token(TOKEN).build()
+# Dispatcher لإدارة التحديثات
+dispatcher = Dispatcher(bot, None, use_context=True)
 
+# ====== تعريف الأوامر ======
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="أهلاً! البوت شغال ✅")
 
-# دالة البداية مع لوحة أزرار
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton("اسعارنا 💲", callback_data='prices')],
-        [InlineKeyboardButton("تواصل معنا 📞", callback_data='contact')],
-        [InlineKeyboardButton("عن البوت 🤖", callback_data='about')]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('أهلا فيك! اختار من القائمة:', reply_markup=reply_markup)
+def echo(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
 
+# تسجيل الأوامر في الـ dispatcher
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
-# دالة التعامل مع الأزرار
-async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    if query.data == 'prices':
-        await query.edit_message_text(text="هذه قائمة الأسعار لدينا...")
-    elif query.data == 'contact':
-        await query.edit_message_text(text="يمكنك التواصل معنا عبر @username")
-    elif query.data == 'about':
-        await query.edit_message_text(text="هذا بوت تجريبي يعمل على Render.")
-
-
-# إضافة الـ Handlers للبوت
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CallbackQueryHandler(button))
-
-
-# Flask route لاستقبال Webhook
-@app.route(f'/{TOKEN}', methods=['POST'])
+# ====== Flask route للـ webhook ======
+@app.route(WEBHOOK_PATH, methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), application.bot)
-    asyncio.run(application.process_update(update))
-    return "OK"
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "OK", 200
 
-
-# تفعيل Webhook عند تشغيل البوت
-async def set_webhook():
-    url = f"https://<your-service-name>.onrender.com/{TOKEN}"
-    await application.bot.set_webhook(url)
-    print("Webhook set to:", url)
-
-
-# تشغيل Flask + تهيئة Webhook
-if __name__ == '__main__':
-    asyncio.run(set_webhook())
+# ====== تشغيل البوت ======
+if __name__ == "__main__":
+    # إزالة أي webhook قديم
+    bot.delete_webhook()
+    # تعيين webhook الجديد
+    bot.set_webhook(url=WEBHOOK_URL)
+    # تشغيل Flask على Render
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
