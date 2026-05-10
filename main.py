@@ -1,4 +1,8 @@
-import os
+import sys
+print("PYTHON VERSION:", sys.version)
+print("INSTALLED PACKAGES:")
+import subprocess
+subprocess.run([sys.executable, "-m", "pip", "freeze"])import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
