@@ -1,44 +1,58 @@
 import os
 import asyncio
 from flask import Flask, request
-from telegram import Bot, Update
-from telegram.ext import Dispatcher, CommandHandler, MessageHandler, Filters
+from telegram import Update, Bot
+from telegram.ext import Dispatcher, CommandHandler, MessageHandler, Filters, CallbackContext
 
-# ====== إعدادات البوت ======
-TOKEN = "YOUR_BOT_TOKEN_HERE"  # استبدل هنا بالتوكن الفعلي من BotFather
-WEBHOOK_PATH = f"/{TOKEN}"
-WEBHOOK_URL = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}{WEBHOOK_PATH}"
+# ==========
+# ضع 8318531021:AAFTTePdd6GqWPw-d80lSDdoYm-47-tXnUI
+# ==========
+TOKEN = "@USSyriastore_bot"
 
+# ==========
+# ضع هنا رابط Webhook الخاص بـ Render
+# https://ussyriabot-3.onrender.com/
+# ==========
+WEBHOOK_URL = "PUT_YOUR_RENDER_URL_HERE"
+
+# ==========
+# إعداد البوت والـ Flask
+# ==========
 bot = Bot(token=TOKEN)
 app = Flask(__name__)
+dp = Dispatcher(bot, None, workers=0, use_context=True)
 
-# Dispatcher لإدارة التحديثات
-dispatcher = Dispatcher(bot, None, use_context=True)
+# ==========
+# أوامر البوت
+# ==========
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("أهلاً! البوت يعمل بنجاح ✅")
 
-# ====== تعريف الأوامر ======
-def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="أهلاً! البوت شغال ✅")
+def echo(update: Update, context: CallbackContext):
+    update.message.reply_text(f"رسالتك: {update.message.text}")
 
-def echo(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+# تسجيل الأوامر
+dp.add_handler(CommandHandler("start", start))
+dp.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
 
-# تسجيل الأوامر في الـ dispatcher
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
-
-# ====== Flask route للـ webhook ======
-@app.route(WEBHOOK_PATH, methods=["POST"])
+# ==========
+# Webhook route
+# ==========
+@app.route("/", methods=["POST"])
 def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return "OK", 200
+    data = request.get_json(force=True)
+    update = Update.de_json(data, bot)
+    asyncio.run(dp.process_update(update))
+    return "ok"
 
-# ====== تشغيل البوت ======
+# ==========
+# تشغيل البوت مع Flask
+# ==========
 if __name__ == "__main__":
-    # إزالة أي webhook قديم
+    # تفعيل Webhook عند بدء التشغيل
     bot.delete_webhook()
-    # تعيين webhook الجديد
-    bot.set_webhook(url=WEBHOOK_URL)
+    bot.set_webhook(WEBHOOK_URL)
+
     # تشغيل Flask على Render
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
