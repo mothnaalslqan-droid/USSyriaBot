@@ -4,62 +4,61 @@ from flask import Flask, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# قراءة التوكن من البيئة
+# قراءة التوكن من متغير البيئة
 TOKEN = os.environ.get('TOKEN')
 
-# إنشاء تطبيق Flask
+# تهيئة Flask
 app = Flask(__name__)
 
-# تجهيز البوت
+# تهيئة البوت
 application = Application.builder().token(TOKEN).build()
 
-# دالة /start
+
+# دالة البداية مع لوحة أزرار
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
-        [InlineKeyboardButton("اسعارنا 💵", callback_data='prices')],
+        [InlineKeyboardButton("اسعارنا 💲", callback_data='prices')],
         [InlineKeyboardButton("تواصل معنا 📞", callback_data='contact')],
         [InlineKeyboardButton("عن البوت 🤖", callback_data='about')]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('أهلاً فيك بمُتجرنا!', reply_markup=reply_markup)
+    await update.message.reply_text('أهلا فيك! اختار من القائمة:', reply_markup=reply_markup)
 
-# دالة الأزرار
+
+# دالة التعامل مع الأزرار
 async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == 'prices':
-        await query.edit_message_text(text="هنا الأسعار...")
+        await query.edit_message_text(text="هذه قائمة الأسعار لدينا...")
     elif query.data == 'contact':
-        await query.edit_message_text(text="تواصل معنا عبر هذا الرابط...")
+        await query.edit_message_text(text="يمكنك التواصل معنا عبر @username")
     elif query.data == 'about':
-        await query.edit_message_text(text="عن البوت: هذا بوت معلوماتي.")
+        await query.edit_message_text(text="هذا بوت تجريبي يعمل على Render.")
 
-# إضافة الـ Handlers
+
+# إضافة الـ Handlers للبوت
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CallbackQueryHandler(button))
 
-# تهيئة البوت قبل التشغيل
-asyncio.run(application.initialize())
 
-# --------------------
-# Webhook Route
-# --------------------
-@app.route('/webhook', methods=['POST'])
-async def webhook():
+# Flask route لاستقبال Webhook
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
     update = Update.de_json(request.get_json(force=True), application.bot)
-    await application.update_queue.put(update)
+    asyncio.run(application.process_update(update))
     return "OK"
 
-# --------------------
-# صفحة اختبار السيرفر
-# --------------------
-@app.route('/', methods=['GET'])
-def index():
-    return "Bot is running!"
 
-# --------------------
-# تشغيل Flask
-# --------------------
-if __name__ == "__main__":
-    print("Render!")
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+# تفعيل Webhook عند تشغيل البوت
+async def set_webhook():
+    url = f"https://<your-service-name>.onrender.com/{TOKEN}"
+    await application.bot.set_webhook(url)
+    print("Webhook set to:", url)
+
+
+# تشغيل Flask + تهيئة Webhook
+if __name__ == '__main__':
+    asyncio.run(set_webhook())
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
